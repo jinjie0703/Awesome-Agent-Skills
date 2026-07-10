@@ -1,62 +1,108 @@
 # 🛠️ Awesome-Agent-Skills
 
-精选、实战、开箱即用的 AI Agent 技能库（Skill Directory）。专注于解耦底层复杂文件与长文本推理，赋予大模型可靠、精准的物理作业执行力。
+[English](#english) | [中文](#中文)
 
 ---
 
-## 📦 仓库内容 (Skill List)
+<a name="english"></a>
+## 🇺🇸 English
 
-本仓库目前收录了以下精选实战技能，每个技能均独立封装在 `.agents/skills/` 目录下：
+### 💡 Background & Purpose
 
-| 技能名称 | 一句话用途 | 详细文档与工具 |
-| :--- | :--- | :--- |
-| **[`docx_editor`](file:///.agents/skills/docx_editor/README.md)** | Microsoft Word 文档原子化修改与智能排版。支持论文/公文预设、表格及多级标题排版、精确定位追加段落与无损文字替换。 | [说明书](file:///.agents/skills/docx_editor/README.md) / [AI 接口](file:///.agents/skills/docx_editor/SKILL.md) / `5 个脚本` |
-| **[`project_deep_diver`](file:///.agents/skills/project_deep_diver/README.md)** | 秋招/社招面试项目深度挖矿利器。自动扫描本地代码库统计行数与技术指纹，提炼 STAR 亮点，预测 5 层连环拷问并导出一键可打印的面经防御手册。 | [说明书](file:///.agents/skills/project_deep_diver/README.md) / [AI 接口](file:///.agents/skills/project_deep_diver/SKILL.md) / `2 个脚本` |
-| **[`conversation-to-knowledge`](file:///.agents/skills/conversation-to-knowledge/README.md)** | 长对话与技术日志知识编辑（Knowledge Editor）。严格遵循“6个月周期法则”与“可迁移测试”，从冗杂日志中萃取可跨项目复用的架构卡片。 | [说明书](file:///.agents/skills/conversation-to-knowledge/README.md) / [AI 接口](file:///.agents/skills/conversation-to-knowledge/SKILL.md) / `双链模板库` |
+When using AI (LLMs, Cursor, Claude, etc.) in daily engineering workflows, we often repeat complex multi-step tasks. Relying on ad-hoc prompts every time is inefficient and prone to errors.
 
----
+**Awesome-Agent-Skills** is dedicated to **curating daily AI Standard Operating Procedures (SOPs) into standardized, reusable Agent Skills**. By turning common AI workflows into robust, structured skills, any AI assistant can execute complex tasks reliably with zero setup friction.
 
-## 📐 核心规范 (Standards & Conventions)
+### 📐 Skill Structure & Conventions
 
-为了保证每一个 Skill 具备工业级稳定性与清晰度，本仓库严格执行以下三项规范：
+Every skill lives under `.agents/skills/<skill_name>/` and follows our **Dual-Track Protocol**:
 
-### 1. 双轨制目录结构 (Dual-Track Protocol)
-每个 Skill 文件夹下必须包含：
-- **`README.md` (人类说明书)**：阐述解决什么痛点、核心特性矩阵、使用命令与决策流程图。
-- **`SKILL.md` (脑机接口文档)**：纯给 AI Agent 后台挂载阅读，干练精简，明确触发条件、环境自检与 SOP 步骤。
-- **`scripts/` (原子工具箱)**：具体的 Python 作业脚本，保证功能解耦、命令行可调用。
+```text
+.agents/skills/<skill_name>/
+├── README.md       # 👥 For Humans: Documentation, use cases, and CLI examples
+├── SKILL.md        # 🤖 For AI Agents: Concise brain-computer interface (SOP & rules)
+└── scripts/        # 🛠️ For Execution: Atomic Python/Shell utility scripts
+```
 
-### 2. 工业防呆与自动备份 (Guardrails)
-- **极速依赖自检**：脚本调用前自动检查依赖，推荐使用 `uv pip install --system <package>` 进行极速全局安装。
-- **无损回滚**：所有对用户文件进行修改的脚本，在写入前会自动在同目录备份一份 `*.bak.ext` 文件。
+**Key Guardrails:**
+- **Environment Dependency Check**: Every `SKILL.md` verifies required packages first (recommends `uv pip install --system`).
+- **Automatic Backups**: Scripts modifying local files must automatically create `*.bak` backups before writing.
+- **Conventional Commits**: All contributions follow exact rules defined in [AGENTS.md](./AGENTS.md).
 
-### 3. Git 与 AI 协同协议 (AGENTS.md)
-本项目配置了统一的贡献规范 [AGENTS.md](file:///AGENTS.md)。人类或 AI 在提交代码时需遵守 Conventional Commits 规范：
-- `<type>(<scope>): <subject>`（如：`feat(docx_editor): add support for table formatting`）
+### 📦 Skills Directory
 
----
+All skills are organized inside the **[.agents/skills/](./.agents/skills)** directory. Feel free to browse the directory directly to explore available skills and their dedicated documentations!
 
-## 🚀 如何使用 (Quick Start)
+### 🚀 Quick Start
 
-### 1. 挂载技能到你的 Agent 工作区
-将本仓库克隆到本地，然后将 `.agents/skills/` 目录下的目标技能文件夹拷贝或软链至你所使用的 AI Agent 技能目录中（例如 Cursor、LangChain、或者本地 IDE 插件中心）：
+#### 1. Mount to AI Workspace (Recommended)
+Copy or symlink any skill directory directly into your AI agent or IDE rules folder (e.g., `.agents/skills/` or `.cursor/rules/`):
 ```bash
 git clone https://github.com/jinjie0703/Awesome-Agent-Skills.git
 ```
 
-### 2. 安装底层依赖 (推荐 `uv`)
-本仓库中的 Python 脚本工具链推荐使用 `uv` 极速包管理器安装至系统 Python 解释器中：
+#### 2. Run CLI Scripts Directly
+You can also run the atomic scripts independently via terminal:
 ```bash
-# 一键安装 docx_editor 的相关依赖
+cd .agents/skills/docx_editor
 uv pip install --system python-docx docxtpl lxml
-
-# 注：project_deep_diver 与 conversation-to-knowledge 均为 Python 标准库零依赖，无需额外安装！
+python scripts/docx_inspect.py /path/to/document.docx
 ```
 
-### 3. 对话触发
-挂载并准备好依赖后，只需在日常对 AI 助手下达自然语言指令（如 *“帮我扫一下当前目录这个项目，提炼几个面试亮眼难点并导出手册”*），AI 即会自动读取对应的 `SKILL.md` 并调用 Python 脚本完成复杂作业！
+---
+
+<a name="中文"></a>
+## 🇨🇳 中文
+
+### 💡 背景与初衷
+
+在日常使用 AI（如 LLM、Cursor、Claude 等）结对编程或处理复杂任务时，我们往往需要反复重复多步骤的作业流程（SOP）。每次都从零编写提示词不仅效率低下，且容易出错和产生幻觉。
+
+**Awesome-Agent-Skills** 的核心目的就是：**沉淀日常使用 AI 的 SOP，将其封装为标准化、可复用的 Agent 技能库**。把日常好用的 AI 工作流沉淀成清晰的“流程规范 + 底层脚本”，让任何 AI 助手都能开箱即用、高效准确地完成复杂作业。
+
+### 📐 技能目录规范
+
+所有技能模块统一存放在 `.agents/skills/<skill_name>/` 目录下，严格遵从**双轨制协议 (Dual-Track Protocol)**：
+
+```text
+.agents/skills/<skill_name>/
+├── README.md       # 👥 人类开发者说明书（解决的痛点、核心特性、命令行用法）
+├── SKILL.md        # 🤖 AI 脑机接口文档（简明干练，包含触发条件、环境自检与 SOP 步骤）
+└── scripts/        # 🛠️ 底层脚本工具箱（高效可靠的原子化 Python/Shell 脚本）
+```
+
+**核心安全防线：**
+- **环境检查优先**：每个 `SKILL.md` 的第一步执行依赖自检（强推使用 `uv pip install --system` 极速安装）。
+- **强制回滚备份**：任何修改用户本地文件的脚本，在操作前必须自动生成 `*.bak` 备份，确保安全无损。
+- **协同提交规范**：所有人与 AI 的贡献均需遵循 [AGENTS.md](./AGENTS.md) 中约定的 Conventional Commits 提交规范。
+
+### 📦 技能库目录
+
+所有技能模块均收录在 **[.agents/skills/](./.agents/skills)** 目录下。欢迎直接进入该目录浏览各技能模块及其对应说明文档！
+
+### 🚀 快速使用
+
+#### 1. 挂载至 Agent 工作区 (推荐)
+直接将所需技能文件夹复制或软链至你的 AI 助手工作区或 IDE 插件目录（如 `.agents/skills/` 或 `.cursor/rules/`）：
+```bash
+git clone https://github.com/jinjie0703/Awesome-Agent-Skills.git
+```
+
+#### 2. 命令行独立调用
+你也可以直接通过命令行调用每个技能下的原子工具脚本：
+```bash
+cd .agents/skills/docx_editor
+uv pip install --system python-docx docxtpl lxml
+python scripts/docx_inspect.py /path/to/document.docx
+```
+
+---
+
+## 🤝 Contributing / 贡献指南
+
+欢迎将你日常积累的 AI 优秀 SOP 沉淀为 Skill！请务必遵循 **双轨制结构** 与 **[AGENTS.md](./AGENTS.md)** 规范提交 Pull Request，一起共建简洁高效的 AI 技能库！
 
 ---
 
 ## 📄 License
-[MIT License](file:///LICENSE)
+[MIT License](./LICENSE)

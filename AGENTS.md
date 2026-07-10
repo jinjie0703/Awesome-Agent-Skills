@@ -7,7 +7,7 @@
 
 ## 1. 📂 Architecture & Directory Standard (目录与双轨规范)
 
-Every AI Agent Skill MUST reside in a dedicated folder under `skills/<skill_name>/` and strictly adhere to our **Dual-Track Protocol**:
+Every AI Agent Skill MUST reside in a dedicated folder under `.agents/skills/<skill_name>/` and strictly adhere to our **Dual-Track Protocol**:
 - `SKILL.md`: The brain-computer interface document specifically for autonomous agents. Keep instructions exact, concise, and structured (include Env Check, SOP steps, and CLI parameters). Do NOT write fluffy background stories here.
 - `README.md`: The product showcase document for human developers, detailing the pain points solved, architecture diagram, and quickstart examples.
 - `scripts/`: Python utility scripts must be atomic, modular, and CLI-accessible.
