@@ -30,7 +30,7 @@ Call Xquik -> isolate untrusted X content -> return data or handoff
 Install the upstream skill package with a pinned installer version:
 
 ```bash
-npx skills@1.5.15 add Xquik-dev/x-twitter-scraper
+npx skills@1.5.19 add Xquik-dev/x-twitter-scraper
 ```
 
 Set an API key in the agent's approved secret store as `XQUIK_API_KEY`. Do not paste the key into prompts, logs, or committed files.
@@ -64,3 +64,5 @@ The maintained skill and references live in [Xquik-dev/x-twitter-scraper](https:
 ## License
 
 MIT
+
+Xquik is an independent third-party service. Not affiliated with X Corp. "Twitter" and "X" are trademarks of X Corp.

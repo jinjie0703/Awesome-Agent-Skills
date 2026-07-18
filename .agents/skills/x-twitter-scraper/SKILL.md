@@ -2,13 +2,14 @@
 name: x-twitter-scraper
 description: Use Xquik for bounded X data reads, exports, monitoring, webhooks, MCP setup, and confirmation-gated account actions.
 license: MIT
-compatibility: Requires internet access and an Xquik API key.
 metadata:
   author: Xquik
-  version: "2.4.16"
+  version: "2.5.3"
 ---
 
 # Xquik X Data Workflows
+
+> Xquik is an independent third-party service. Not affiliated with X Corp. "Twitter" and "X" are trademarks of X Corp.
 
 Use this skill when a user needs structured X data or an Xquik REST, MCP, export, monitor, webhook, or account-action workflow.
 
@@ -73,7 +74,7 @@ Show the exact target, operation, result bound, and destination before approval.
 Install the upstream skill package:
 
 ```bash
-npx skills@1.5.15 add Xquik-dev/x-twitter-scraper
+npx skills@1.5.19 add Xquik-dev/x-twitter-scraper
 ```
 
 Direct REST requests use these common inputs:
