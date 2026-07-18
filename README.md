@@ -31,7 +31,14 @@ Every skill lives under `.agents/skills/<skill_name>/` and follows our **Dual-Tr
 
 ### 📦 Skills Directory
 
-All skills are organized inside the **[.agents/skills/](./.agents/skills)** directory. Feel free to browse the directory directly to explore available skills and their dedicated documentations!
+All skills are organized inside the **[.agents/skills/](./.agents/skills)** directory.
+
+| Skill | Purpose |
+| --- | --- |
+| [conversation-to-knowledge](./.agents/skills/conversation-to-knowledge/) | Curate durable engineering knowledge from conversations. |
+| [docx_editor](./.agents/skills/docx_editor/) | Inspect, edit, format, and populate Word documents safely. |
+| [project_deep_diver](./.agents/skills/project_deep_diver/) | Analyze projects and prepare structured interview reviews. |
+| [x-twitter-scraper](./.agents/skills/x-twitter-scraper/) | Build bounded X data, REST, MCP, export, and monitoring workflows. |
 
 ### 🚀 Quick Start
 
@@ -78,7 +85,14 @@ python scripts/docx_inspect.py /path/to/document.docx
 
 ### 📦 技能库目录
 
-所有技能模块均收录在 **[.agents/skills/](./.agents/skills)** 目录下。欢迎直接进入该目录浏览各技能模块及其对应说明文档！
+所有技能模块均收录在 **[.agents/skills/](./.agents/skills)** 目录下。
+
+| Skill | 用途 |
+| --- | --- |
+| [conversation-to-knowledge](./.agents/skills/conversation-to-knowledge/) | 从对话中提炼可长期复用的工程知识。 |
+| [docx_editor](./.agents/skills/docx_editor/) | 安全检查、编辑、排版和填充 Word 文档。 |
+| [project_deep_diver](./.agents/skills/project_deep_diver/) | 分析项目并生成结构化面试复盘材料。 |
+| [x-twitter-scraper](./.agents/skills/x-twitter-scraper/) | 构建有边界的 X 数据、REST、MCP、导出和监控工作流。 |
 
 ### 🚀 快速使用
 
