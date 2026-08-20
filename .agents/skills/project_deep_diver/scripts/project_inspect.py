@@ -16,6 +16,12 @@ import argparse
 from pathlib import Path
 from collections import defaultdict
 
+# 确保 Windows 终端 UTF-8 编码正常输出
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 # ============================================================
 # 1. 语言识别映射（后缀 -> 语言名）
 # ============================================================
@@ -67,11 +73,15 @@ IGNORE_FILES = {".DS_Store", "Thumbs.db", ".gitkeep"}
 # 3. 技术栈指纹检测器
 # ============================================================
 def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
-    """通过关键配置文件识别项目核心技术栈"""
+    """通过关键配置文件识别项目核心技术栈与架构指纹"""
     fingerprints = {
         "frameworks": [],
+        "ai_and_llm": [],
         "databases": [],
         "infrastructure": [],
+        "security_and_auth": [],
+        "microservices_and_mq": [],
+        "monorepo": [],
         "package_managers": [],
         "ci_cd": [],
         "key_dependencies": [],
@@ -80,7 +90,17 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
     file_names = {Path(f).name.lower() for f in all_files}
     file_set = {f.lower() for f in all_files}
 
-    # --- 前端框架 ---
+    # --- Monorepo 检测 ---
+    if "pnpm-workspace.yaml" in file_names or "pnpm-workspace.yml" in file_names:
+        fingerprints["monorepo"].append("Pnpm Workspaces")
+    if "turbo.json" in file_names:
+        fingerprints["monorepo"].append("Turborepo")
+    if "lerna.json" in file_names:
+        fingerprints["monorepo"].append("Lerna")
+    if sum(1 for f in file_names if f == "pom.xml") > 1:
+        fingerprints["monorepo"].append("Maven Multi-Module")
+
+    # --- 前端 & Node.js 框架 ---
     if "package.json" in file_names:
         fingerprints["package_managers"].append("npm/yarn/pnpm")
         pkg_path = project_dir / "package.json"
@@ -91,6 +111,7 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
                 all_deps = {}
                 all_deps.update(pkg.get("dependencies", {}))
                 all_deps.update(pkg.get("devDependencies", {}))
+                deps_keys_lower = {k.lower() for k in all_deps.keys()}
                 fingerprints["key_dependencies"] = list(all_deps.keys())[:30]
 
                 if "vue" in all_deps or "@vue/cli-service" in all_deps:
@@ -109,6 +130,8 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
                     fingerprints["frameworks"].append("Webpack")
                 if "express" in all_deps:
                     fingerprints["frameworks"].append("Express.js")
+                if "nest" in all_deps or "@nestjs/core" in all_deps:
+                    fingerprints["frameworks"].append("NestJS")
                 if "element-plus" in all_deps or "element-ui" in all_deps:
                     fingerprints["frameworks"].append("Element UI/Plus")
                 if "ant-design-vue" in all_deps or "antd" in all_deps:
@@ -119,7 +142,7 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
                     fingerprints["frameworks"].append("Pinia (State Management)")
                 if "vuex" in all_deps:
                     fingerprints["frameworks"].append("Vuex (State Management)")
-                if "redux" in all_deps:
+                if "redux" in all_deps or "@reduxjs/toolkit" in all_deps:
                     fingerprints["frameworks"].append("Redux (State Management)")
                 if "tailwindcss" in all_deps:
                     fingerprints["frameworks"].append("TailwindCSS")
@@ -131,17 +154,33 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
                     fingerprints["databases"].append("MongoDB (Mongoose)")
                 if "redis" in all_deps or "ioredis" in all_deps:
                     fingerprints["databases"].append("Redis")
+
+                # AI / LLM 前端或 Node
+                if "openai" in deps_keys_lower:
+                    fingerprints["ai_and_llm"].append("OpenAI SDK")
+                if "langchain" in deps_keys_lower or "@langchain/core" in deps_keys_lower:
+                    fingerprints["ai_and_llm"].append("LangChain.js")
+                if "jsonwebtoken" in deps_keys_lower or "jwt-decode" in deps_keys_lower:
+                    fingerprints["security_and_auth"].append("JWT")
+                if "socket.io" in deps_keys_lower or "ws" in deps_keys_lower:
+                    fingerprints["microservices_and_mq"].append("WebSocket")
+                if "kafkajs" in deps_keys_lower:
+                    fingerprints["microservices_and_mq"].append("KafkaJS")
+                if "amqplib" in deps_keys_lower:
+                    fingerprints["microservices_and_mq"].append("RabbitMQ (amqplib)")
+                if "@grpc/grpc-js" in deps_keys_lower:
+                    fingerprints["microservices_and_mq"].append("gRPC (Node.js)")
             except Exception:
                 pass
 
-    # --- Python 后端 ---
+    # --- Python 后端与 AI 栈 ---
     if "requirements.txt" in file_names:
         fingerprints["package_managers"].append("pip")
         req_path = project_dir / "requirements.txt"
         if req_path.exists():
             try:
                 with open(req_path, "r", encoding="utf-8") as f:
-                    deps = [line.strip().split("==")[0].split(">=")[0].lower()
+                    deps = [line.strip().split("==")[0].split(">=")[0].split("<=")[0].split("~=")[0].lower()
                             for line in f if line.strip() and not line.startswith("#")]
                 fingerprints["key_dependencies"].extend(deps[:30])
                 if "django" in deps:
@@ -162,6 +201,42 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
                     fingerprints["databases"].append("SQLAlchemy ORM")
                 if "pymongo" in deps:
                     fingerprints["databases"].append("MongoDB")
+                if "tortoise-orm" in deps:
+                    fingerprints["databases"].append("Tortoise ORM (Async)")
+
+                # AI / LLM 栈
+                if "langchain" in deps or "langchain-core" in deps:
+                    fingerprints["ai_and_llm"].append("LangChain (LLM Orchestration)")
+                if "llama-index" in deps or "llamaindex" in deps:
+                    fingerprints["ai_and_llm"].append("LlamaIndex (RAG Framework)")
+                if "openai" in deps:
+                    fingerprints["ai_and_llm"].append("OpenAI Python SDK")
+                if "ollama" in deps:
+                    fingerprints["ai_and_llm"].append("Ollama (Local LLM)")
+                if "vllm" in deps:
+                    fingerprints["ai_and_llm"].append("vLLM (High-throughput Serving)")
+                if "chromadb" in deps:
+                    fingerprints["ai_and_llm"].append("ChromaDB (Vector DB)")
+                if "pymilvus" in deps or "milvus" in deps:
+                    fingerprints["ai_and_llm"].append("Milvus (Vector DB)")
+                if "qdrant-client" in deps:
+                    fingerprints["ai_and_llm"].append("Qdrant (Vector DB)")
+                if "pinecone-client" in deps:
+                    fingerprints["ai_and_llm"].append("Pinecone (Vector DB)")
+                if "transformers" in deps or "torch" in deps:
+                    fingerprints["ai_and_llm"].append("PyTorch / HuggingFace Transformers")
+
+                # 安全 & RPC & MQ
+                if "pyjwt" in deps or "python-jose" in deps:
+                    fingerprints["security_and_auth"].append("JWT (PyJWT/JOSE)")
+                if "casbin" in deps:
+                    fingerprints["security_and_auth"].append("Casbin (RBAC/ABAC)")
+                if "grpcio" in deps:
+                    fingerprints["microservices_and_mq"].append("gRPC (Python)")
+                if "pika" in deps:
+                    fingerprints["microservices_and_mq"].append("RabbitMQ (Pika)")
+                if "confluent-kafka" in deps or "kafka-python" in deps:
+                    fingerprints["microservices_and_mq"].append("Kafka (Python)")
             except Exception:
                 pass
 
@@ -175,14 +250,41 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
     if "build.gradle" in file_names or "build.gradle.kts" in file_names:
         fingerprints["package_managers"].append("Gradle")
         fingerprints["frameworks"].append("Java/Kotlin (Gradle Project)")
-    # 简单检测 Spring Boot
+    # Spring Boot / Spring Cloud
     if any("springboot" in f or "spring-boot" in f for f in file_set):
         fingerprints["frameworks"].append("Spring Boot")
+    if any("springcloud" in f or "spring-cloud" in f for f in file_set):
+        fingerprints["microservices_and_mq"].append("Spring Cloud")
+    if any("nacos" in f for f in file_set):
+        fingerprints["microservices_and_mq"].append("Nacos (Registry & Config)")
+    if any("dubbo" in f for f in file_set):
+        fingerprints["microservices_and_mq"].append("Apache Dubbo")
+    if any("sa-token" in f for f in file_set):
+        fingerprints["security_and_auth"].append("Sa-Token")
+    if any("spring-security" in f for f in file_set):
+        fingerprints["security_and_auth"].append("Spring Security")
+    if any("mybatis" in f for f in file_set):
+        fingerprints["databases"].append("MyBatis / MyBatis-Plus")
 
     # --- Go ---
     if "go.mod" in file_names:
         fingerprints["package_managers"].append("Go Modules")
         fingerprints["frameworks"].append("Go")
+        go_mod_path = project_dir / "go.mod"
+        if go_mod_path.exists():
+            try:
+                with open(go_mod_path, "r", encoding="utf-8") as f:
+                    mod_text = f.read().lower()
+                if "gin-gonic/gin" in mod_text:
+                    fingerprints["frameworks"].append("Gin (Go)")
+                if "gorm.io/gorm" in mod_text:
+                    fingerprints["databases"].append("GORM")
+                if "google.golang.org/grpc" in mod_text:
+                    fingerprints["microservices_and_mq"].append("gRPC (Go)")
+                if "golang-jwt/jwt" in mod_text:
+                    fingerprints["security_and_auth"].append("JWT (Go)")
+            except Exception:
+                pass
 
     # --- Rust ---
     if "cargo.toml" in file_names:
@@ -196,7 +298,7 @@ def detect_tech_fingerprints(project_dir: Path, all_files: list[str]) -> dict:
         fingerprints["infrastructure"].append("Docker Compose")
     if "nginx.conf" in file_names or any("nginx" in f for f in file_set):
         fingerprints["infrastructure"].append("Nginx")
-    if "kubernetes" in file_names or any("k8s" in f for f in file_set):
+    if "kubernetes" in file_names or any("k8s" in f for f in file_set) or any(f.endswith(".k8s.yaml") for f in file_set):
         fingerprints["infrastructure"].append("Kubernetes")
 
     # --- CI/CD ---
@@ -324,19 +426,27 @@ def generate_markdown_brief(report: dict) -> str:
         lines.append(f"| {lang} | {stats['files']} | {stats['lines']:,} | {pct}% |")
 
     fp = report["tech_fingerprints"]
-    lines.append(f"\n## 🧬 技术栈指纹")
-    if fp["frameworks"]:
-        lines.append(f"- **框架/核心库**: {', '.join(fp['frameworks'])}")
-    if fp["databases"]:
-        lines.append(f"- **数据库/缓存**: {', '.join(fp['databases'])}")
-    if fp["infrastructure"]:
-        lines.append(f"- **基础设施**: {', '.join(fp['infrastructure'])}")
-    if fp["package_managers"]:
+    lines.append(f"\n## 🧬 技术栈与架构指纹")
+    if fp.get("frameworks"):
+        lines.append(f"- **主框架/核心库**: {', '.join(fp['frameworks'])}")
+    if fp.get("ai_and_llm"):
+        lines.append(f"- **AI / 大模型与向量库**: {', '.join(fp['ai_and_llm'])}")
+    if fp.get("monorepo"):
+        lines.append(f"- **多包/Monorepo 体系**: {', '.join(fp['monorepo'])}")
+    if fp.get("security_and_auth"):
+        lines.append(f"- **安全与认证鉴权**: {', '.join(fp['security_and_auth'])}")
+    if fp.get("microservices_and_mq"):
+        lines.append(f"- **微服务/RPC/消息队列**: {', '.join(fp['microservices_and_mq'])}")
+    if fp.get("databases"):
+        lines.append(f"- **数据库/ORM/缓存**: {', '.join(fp['databases'])}")
+    if fp.get("infrastructure"):
+        lines.append(f"- **基础设施与容器**: {', '.join(fp['infrastructure'])}")
+    if fp.get("package_managers"):
         lines.append(f"- **包管理器**: {', '.join(fp['package_managers'])}")
-    if fp["ci_cd"]:
-        lines.append(f"- **CI/CD**: {', '.join(fp['ci_cd'])}")
+    if fp.get("ci_cd"):
+        lines.append(f"- **CI/CD 流水线**: {', '.join(fp['ci_cd'])}")
 
-    if fp["key_dependencies"]:
+    if fp.get("key_dependencies"):
         lines.append(f"\n## 📦 核心依赖清单 (Top 20)")
         for dep in fp["key_dependencies"][:20]:
             lines.append(f"- `{dep}`")
@@ -346,6 +456,16 @@ def generate_markdown_brief(report: dict) -> str:
         lines.append(f"- {item}")
 
     return "\n".join(lines)
+
+
+def backup_file(file_path: Path) -> str:
+    """在修改前自动创建 .bak 备份副本"""
+    if not file_path.exists():
+        return ""
+    import shutil
+    bak_path = file_path.with_suffix(f".bak{file_path.suffix}")
+    shutil.copy2(str(file_path), str(bak_path))
+    return str(bak_path)
 
 
 if __name__ == "__main__":
@@ -364,10 +484,15 @@ if __name__ == "__main__":
 
     if args.output:
         out_path = Path(args.output)
+        bak_msg = ""
+        if out_path.exists():
+            bak = backup_file(out_path)
+            if bak:
+                bak_msg = f"（原报告已备份至: {bak}）"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
-        print(f"JSON 报告已保存至: {out_path}")
+        print(f"JSON 报告已保存至: {out_path}{bak_msg}")
 
     if args.markdown:
         md = generate_markdown_brief(report)

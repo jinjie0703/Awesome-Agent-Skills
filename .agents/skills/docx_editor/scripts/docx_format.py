@@ -9,10 +9,18 @@ docx_format.py - Word 文档智能原子化排版引擎
 """
 
 import sys
+import re
 import json
 import shutil
 import argparse
 from pathlib import Path
+
+# 确保 Windows 终端 UTF-8 编码正常输出
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 try:
     import docx
     from docx.shared import Pt, Inches, Cm
@@ -46,22 +54,11 @@ def apply_font_to_run(run, font_name_cn=None, font_name_ascii=None, size_pt=None
 
 
 def _get_heading_level(style_name: str) -> int:
-    """从样式名中提取标题层级，非标题返回 0"""
+    """从样式名中提取标题层级（支持 标题1, 标题 1, Heading1, Heading 1 等变体），非标题返回 0"""
     if not style_name:
         return 0
-    # 英文样式: "Heading 1", "Heading 2", ...
-    if style_name.startswith("Heading "):
-        try:
-            return int(style_name.split(" ")[1])
-        except (IndexError, ValueError):
-            return 0
-    # 中文样式: "标题 1", "标题 2", ...
-    if style_name.startswith("标题 "):
-        try:
-            return int(style_name.split(" ")[1])
-        except (IndexError, ValueError):
-            return 0
-    return 0
+    match = re.match(r'^(?:heading|标题)\s*([1-6])$', style_name.strip(), re.IGNORECASE)
+    return int(match.group(1)) if match else 0
 
 
 def _apply_heading_style(paragraph, config: dict, level: int):
@@ -78,7 +75,7 @@ def _apply_heading_style(paragraph, config: dict, level: int):
     # 字体与字号
     font_cn = config.get(key_font, config.get(f"h{level}_font"))
     size_pt = config.get(key_size, config.get(f"h{level}_size"))
-    font_ascii = config.get("body_font_ascii", "Times New Roman")
+    font_ascii = config.get(f"h{level}_font_ascii", config.get("body_font_ascii", "Times New Roman"))
     
     for r in paragraph.runs:
         apply_font_to_run(
@@ -128,16 +125,26 @@ def _format_paragraph(paragraph, config: dict):
 def backup_file(file_path: str) -> str:
     """在修改前自动创建 .bak.docx 备份副本"""
     p = Path(file_path)
+    if not p.exists():
+        return ""
     bak_path = p.with_suffix(".bak.docx")
     shutil.copy2(str(p), str(bak_path))
     return str(bak_path)
 
 
-def format_document(file_path: str, output_path: str, preset: str = None, custom_config: dict = None):
+def format_document(file_path: str, output_path: str = None, preset: str = None, custom_config: dict = None, dry_run: bool = False):
     doc = docx.Document(file_path)
+    save_path = output_path or file_path
     
-    # 自动备份原文件
-    bak = backup_file(file_path)
+    if dry_run:
+        return f"[Dry-Run 模式] 预检成功：文档包含 {len(doc.paragraphs)} 个段落、{len(doc.tables)} 个表格。使用预设 '{preset or 'custom'}' 格式化，未做实际保存更改。"
+
+    # 自动备份最终将被覆盖的文件
+    bak_msg = ""
+    if Path(save_path).exists():
+        bak = backup_file(save_path)
+        if bak:
+            bak_msg = f"（已备份原文件至: {bak}）"
     
     # 整合排版配置
     config = {}
@@ -182,6 +189,27 @@ def format_document(file_path: str, output_path: str, preset: str = None, custom
             "h3_size_pt": 16, # 三号
             "h3_align": "left",
         }
+    elif preset == "tech_report":
+        config = {
+            "page_margin_cm": 2.54,
+            "body_font_cn": "微软雅黑",
+            "body_font_ascii": "Segoe UI",
+            "body_size_pt": 11, # 11pt
+            "line_spacing": 1.35,
+            "first_line_indent_chars": 0, # 技术文档段落顶格
+            "h1_font_cn": "微软雅黑",
+            "h1_size_pt": 18,
+            "h1_align": "left",
+            "h2_font_cn": "微软雅黑",
+            "h2_size_pt": 14,
+            "h2_align": "left",
+            "h3_font_cn": "微软雅黑",
+            "h3_size_pt": 12,
+            "h3_align": "left",
+            "h4_font_cn": "微软雅黑",
+            "h4_size_pt": 11,
+            "h4_align": "left",
+        }
 
     # 2. 用自定义配置覆盖（确保用户输入优先级最高）
     if custom_config:
@@ -208,18 +236,18 @@ def format_document(file_path: str, output_path: str, preset: str = None, custom
                 for p in cell.paragraphs:
                     _format_paragraph(p, config)
 
-    save_path = output_path or file_path
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
     doc.save(save_path)
-    return f"文档排版完成并成功保存至: {save_path}（原文件已备份至: {bak}）"
+    return f"文档排版完成并成功保存至: {save_path}{bak_msg}"
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Word 文档排版引擎")
     parser.add_argument("file_path", help="输入文档路径")
     parser.add_argument("--output", "-o", help="输出路径（可选，默认覆盖原文件）")
-    parser.add_argument("--preset", choices=["thesis", "official_doc"], help="应用标准预设")
+    parser.add_argument("--preset", choices=["thesis", "official_doc", "tech_report"], help="应用标准预设 (thesis: 学术论文, official_doc: 机关公文, tech_report: 技术报告)")
     parser.add_argument("--custom-config", help="外部 JSON 排版配置文件路径")
+    parser.add_argument("--dry-run", action="store_true", help="演练模式：仅检测段落和格式配置，不实际写回文件")
     
     # CLI 细微参数控制
     parser.add_argument("--body-font", help="正文中文字体 (如 宋体)")
@@ -263,5 +291,5 @@ if __name__ == "__main__":
             config_key = cli_mapping.get(key, key)
             custom_dict[config_key] = val
 
-    result_msg = format_document(args.file_path, args.output, args.preset, custom_dict if custom_dict else None)
+    result_msg = format_document(args.file_path, args.output, args.preset, custom_dict if custom_dict else None, dry_run=args.dry_run)
     print(result_msg)

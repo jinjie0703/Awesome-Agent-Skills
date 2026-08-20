@@ -14,6 +14,13 @@ import sys
 import shutil
 import argparse
 from pathlib import Path
+
+# 确保 Windows 终端 UTF-8 编码正常输出
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 try:
     import docx
     from docx.shared import Pt
@@ -27,6 +34,8 @@ except ImportError:
 def backup_file(file_path: str) -> str:
     """在修改前自动创建 .bak.docx 备份副本"""
     p = Path(file_path)
+    if not p.exists():
+        return ""
     bak_path = p.with_suffix(".bak.docx")
     shutil.copy2(str(p), str(bak_path))
     return str(bak_path)
@@ -90,7 +99,7 @@ def insert_content(file_path: str, content: str, output_path: str = None,
     - at_end: 在文档末尾追加
     """
     doc = docx.Document(file_path)
-    bak = backup_file(file_path)
+    save_path = output_path or file_path
     
     paragraphs = doc.paragraphs
     if not paragraphs:
@@ -123,8 +132,16 @@ def insert_content(file_path: str, content: str, output_path: str = None,
     else:
         return "错误: 必须指定插入位置，使用 --after-text、--after-index 或 --at-end"
     
-    # 支持多段落插入（按换行符分割）
-    content_parts = content.split("\\n")
+    # 自动备份最终将被覆盖的文件
+    bak_msg = ""
+    if Path(save_path).exists():
+        bak = backup_file(save_path)
+        if bak:
+            bak_msg = f"（原文件已备份至: {bak}）"
+    
+    # 支持多段落插入（同时兼容字面量 \n、真实换行符 \n 以及 \r\n）
+    normalized_content = content.replace("\r\n", "\n").replace("\\n", "\n")
+    content_parts = normalized_content.split("\n")
     inserted_count = 0
     current_ref = target_paragraph
     for part in content_parts:
@@ -135,11 +152,10 @@ def insert_content(file_path: str, content: str, output_path: str = None,
         current_ref = new_p
         inserted_count += 1
     
-    save_path = output_path or file_path
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
     doc.save(save_path)
     return (f"成功在{location_desc}插入了 {inserted_count} 个新段落，"
-            f"已保存至: {save_path}（原文件已备份至: {bak}）")
+            f"已保存至: {save_path}{bak_msg}")
 
 
 if __name__ == "__main__":

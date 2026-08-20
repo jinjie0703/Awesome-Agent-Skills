@@ -1,6 +1,7 @@
 # Knowledge Note Templates
 
 Choose the template that fits the knowledge naturally. Do not force-fit.
+All templates include PKM-ready (Obsidian / Logseq / Notion) YAML Frontmatter for seamless vault integration.
 
 ---
 
@@ -9,7 +10,16 @@ Choose the template that fits the knowledge naturally. Do not force-fit.
 Use when the knowledge involves a concrete problem, a chosen solution, and explicit reasoning.
 
 ```markdown
-# [Clear, Actionable Title — Not "Chat Summary"]
+---
+title: "[Clear, Actionable Title — Not 'Chat Summary']"
+date: YYYY-MM-DD
+type: decision-record
+tags: [architecture/topic, domain/subdomain]
+aliases: ["Alternative Search Keyphrase"]
+status: evergreen
+---
+
+# [Clear, Actionable Title]
 
 ## Context
 [Brief background: what engineering challenge or constraint triggered this?]
@@ -21,7 +31,8 @@ Use when the knowledge involves a concrete problem, a chosen solution, and expli
 [The concrete approach taken or decided upon.]
 
 ## Why (Trade-offs & Rationale)
-[Why this over alternatives? Key benefits and accepted costs.]
+- **Pros**: [Key benefits and operational upsides]
+- **Cons & Costs**: [Accepted trade-offs, limitations, or maintenance cost]
 
 ## Lessons Learned
 [Generalized rules, pitfalls to avoid, or invariants applicable beyond this case.]
@@ -34,6 +45,15 @@ Use when the knowledge involves a concrete problem, a chosen solution, and expli
 Use when the knowledge is a reusable way of thinking, not a specific problem/solution pair.
 
 ```markdown
+---
+title: "[Concept Name]"
+date: YYYY-MM-DD
+type: mental-model
+tags: [framework/mental-model, engineering-principles]
+aliases: ["Concept Synonym"]
+status: evergreen
+---
+
 # [Concept Name]
 
 ## One-Liner
@@ -56,6 +76,15 @@ Use when the knowledge is a reusable way of thinking, not a specific problem/sol
 Use when the primary value is "what NOT to do" and why.
 
 ```markdown
+---
+title: "[Anti-Pattern Name]: Why [Approach] Fails for [Context]"
+date: YYYY-MM-DD
+type: anti-pattern
+tags: [debugging/anti-pattern, post-mortem]
+aliases: ["Failed Pattern Name"]
+status: evergreen
+---
+
 # [Anti-Pattern Name]: Why [Approach] Fails for [Context]
 
 ## Context

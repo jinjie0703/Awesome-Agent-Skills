@@ -12,9 +12,25 @@ playbook_generator.py - 面经防御手册生成器
 
 import sys
 import json
+import shutil
 import argparse
 from pathlib import Path
 from datetime import datetime
+
+# 确保 Windows 终端 UTF-8 编码正常输出
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
+
+def backup_file(file_path: Path) -> str:
+    """在修改前自动创建 .bak.md 备份副本"""
+    if not file_path.exists():
+        return ""
+    bak_path = file_path.with_suffix(".bak.md")
+    shutil.copy2(str(file_path), str(bak_path))
+    return str(bak_path)
 
 
 def generate_playbook(project_name: str, data: dict, output_path: str) -> str:
@@ -142,13 +158,19 @@ def generate_playbook(project_name: str, data: dict, output_path: str) -> str:
 
     content = "\n".join(lines)
 
-    # 保存
+    # 保存与备份
     out = Path(output_path)
+    bak_msg = ""
+    if out.exists():
+        bak = backup_file(out)
+        if bak:
+            bak_msg = f"（原手册已备份至: {bak}）"
+            
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         f.write(content)
 
-    return f"面经防御手册已成功生成并保存至: {out.resolve()}"
+    return f"面经防御手册已成功生成并保存至: {out.resolve()}{bak_msg}"
 
 
 if __name__ == "__main__":

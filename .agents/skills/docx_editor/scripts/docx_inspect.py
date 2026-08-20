@@ -6,9 +6,17 @@ docx_inspect.py - Word 文档内容与排版侦查工具
 """
 
 import sys
+import re
 import json
 import argparse
 from pathlib import Path
+
+# 确保 Windows 终端 UTF-8 编码正常输出
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 try:
     import docx
     from docx.shared import Pt, Inches, Cm
@@ -18,20 +26,11 @@ except ImportError:
 
 
 def _get_heading_level(style_name: str) -> int:
-    """从样式名中提取标题层级，非标题返回 0"""
+    """从样式名中提取标题层级（支持 标题1, 标题 1, Heading1, Heading 1 等变体），非标题返回 0"""
     if not style_name:
         return 0
-    if style_name.startswith("Heading "):
-        try:
-            return int(style_name.split(" ")[1])
-        except (IndexError, ValueError):
-            return 0
-    if style_name.startswith("标题 "):
-        try:
-            return int(style_name.split(" ")[1])
-        except (IndexError, ValueError):
-            return 0
-    return 0
+    match = re.match(r'^(?:heading|标题)\s*([1-6])$', style_name.strip(), re.IGNORECASE)
+    return int(match.group(1)) if match else 0
 
 
 def _collect_paragraph_info(paragraph, font_stats: dict, size_stats: dict):

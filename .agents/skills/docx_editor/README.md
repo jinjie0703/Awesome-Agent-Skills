@@ -23,11 +23,11 @@
 ## ✨ 核心特性矩阵
 
 - 🕵️ **感知层 (`docx_inspect.py`)**：一秒提取段落/表格结构、主导字体与字号，生成 Markdown 内容简报供 AI 分析；
-- 🎨 **排版层 (`docx_format.py`)**：内置 `thesis`（学术论文）与 `official_doc`（机关公文）标准预设，支持 CLI / JSON 灵活传入几十项精细样式参数；
-- 🎯 **替换层 (`docx_replace.py`)**：跨 Run / 跨表格无损定位查找替换，100% 保持首字符原有的加粗、颜色与字体样式；
+- 🎨 **排版层 (`docx_format.py`)**：内置 `thesis`（学术论文）、`official_doc`（机关公文）与 `tech_report`（技术报告/设计文档）三大标准预设，支持 CLI / JSON 灵活传入几十项精细样式参数与 `--dry-run` 预览；
+- 🎯 **替换层 (`docx_replace.py`)**：跨 Run / 跨表格无损定位查找替换，100% 保持首字符原有的加粗、颜色与字体样式，支持 `--dry-run`；
 - 🧩 **填空层 (`docx_template.py`)**：基于 Jinja2 与 `docxtpl` 的专业模版填充引擎，支持 `--json-file` 防止终端转义报错；
 - ✍️ **追加层 (`docx_insert.py`)**：指哪插哪，按关键词或序号在指定位置无缝插入新段落并继承上下文排版；
-- 🛡️ **工业防呆防线**：全套脚本自动支持前置 `uv --system` 极速依赖自检，并在每次写回前**自动生成 `.bak.docx` 副本备份**！
+- 🛡️ **工业防呆防线**：全套脚本自动支持前置 `uv --system` 极速依赖自检，并在覆盖保存前**自动生成 `*.bak.docx` 副本备份**！
 
 ---
 
@@ -39,7 +39,7 @@ docx_editor/
 ├── SKILL.md                  # 🤖 AI Agent 专用脑机接口文档（SOP、触发时机与逻辑决策说明）
 └── scripts/                  # 🛠️ 底层 Python 原子操作脚本库
     ├── docx_inspect.py       # 内容与排版侦查工具
-    ├── docx_format.py        # 智能排版与预设处理工具
+    ├── docx_format.py        # 智能排版与预设处理工具（支持 thesis/official_doc/tech_report）
     ├── docx_replace.py       # 无损文本及表格精准替换工具
     ├── docx_template.py      # Jinja2 模板变量渲染填空工具
     └── docx_insert.py        # 指定位置段落/文本追加工具
@@ -69,13 +69,16 @@ uv pip install --system python-docx docxtpl lxml
 # 1. 侦查文档概况与排版信息
 python scripts/docx_inspect.py input.docx --preview-lines 50
 
-# 2. 将文档一键排版为学术论文格式（二号黑体标题 + 小四宋体正文 + 1.5倍行距）
-python scripts/docx_format.py input.docx --preset thesis --output thesis_formatted.docx
+# 2. 将文档一键排版为技术报告格式（11pt 微软雅黑 + 1.35倍行距 + 顶格排版）
+python scripts/docx_format.py input.docx --preset tech_report --output tech_report_out.docx
 
-# 3. 在文末追加一段致谢，自动沿用原文档正文样式
+# 3. 演练模式：先预览检测而不实际修改文件
+python scripts/docx_format.py input.docx --preset thesis --dry-run
+
+# 4. 在文末追加一段致谢，自动沿用原文档正文样式
 python scripts/docx_insert.py input.docx --at-end --content "致谢：感谢各位老师与同学的悉心指导..." -o out.docx
 
-# 4. 模板变量填充（配合 JSON 数据文件）
+# 5. 模板变量填充（配合 JSON 数据文件）
 python scripts/docx_template.py 实习证明模板.docx --json-file data.json --output 张三_实习证明.docx
 ```
 

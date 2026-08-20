@@ -22,10 +22,11 @@
 
 ## ✨ 核心特性
 
-- 🔬 **项目物理扫描 (`project_inspect.py`)**：零依赖秒级遍历项目目录，自动统计代码行数、识别技术栈指纹（Vue/React/Spring Boot/Redis/Docker 等）、解析 `package.json` / `requirements.txt` 等核心依赖清单；
+- 🔬 **全栈架构与 AI 指纹扫描 (`project_inspect.py`)**：零外部依赖秒级遍历项目目录，识别 **AI/LLM 大模型生态**（LangChain/LlamaIndex/vLLM/Ollama/向量数据库）、**Monorepo 体系**（Pnpm/Turborepo/Lerna）、**微服务与 RPC**（gRPC/Dubbo/Spring Cloud/Kafka）以及常规全栈框架；
 - 🧠 **AI 四模块深度挖掘**：STAR 法则亮点包装 → 5 连环面试官压力拷问预测 → 初级/当前/终极方案三级对比 → 自我批判成长复盘；
-- 📄 **面经手册一键导出 (`playbook_generator.py`)**：将深挖成果自动格式化为精美的 Markdown 文档，带封面、表格、分类图标，随时打印或发送到手机复习；
-- 🎯 **真实技术栈驱动**：不是空中楼阁式的通用模板，而是基于你**真实项目代码**的精准深挖！
+- 📄 **面经手册一键导出 (`playbook_generator.py`)**：将深挖成果自动格式化为精美的 Markdown 文档，带封面、表格、分类图标，随时打印或复习（覆盖写入前自动 `.bak.md` 备份）；
+- 🎙️ **模拟面试官实时对线 (Mock Interview Mode)**：支持与 AI 开展单题单答的模拟技术面试，即时获取 1~10 分专业打分与高情商优化话术；
+- 🎯 **真实代码驱动**：不是空中楼阁式的通用模板，而是基于你**真实项目代码**的精准深挖！
 
 ---
 
@@ -34,9 +35,9 @@
 ```text
 project_deep_diver/
 ├── README.md                        # 👥 本说明文档（给人类开发者看）
-├── SKILL.md                         # 🤖 AI Agent 专用 SOP 脑机接口
+├── SKILL.md                         # 🤖 AI Agent 专用 SOP 脑机接口（含模拟面试与手册生成）
 └── scripts/                         # 🛠️ 底层原子工具
-    ├── project_inspect.py           # 项目技术栈与架构指纹扫描仪
+    ├── project_inspect.py           # 项目技术栈与架构指纹扫描仪（支持全生态感知）
     └── playbook_generator.py        # 面经防御手册 Markdown 生成器
 ```
 
@@ -54,7 +55,7 @@ project_deep_diver/
 # 输出 JSON 格式的技术侦查报告
 python scripts/project_inspect.py /path/to/your/project
 
-# 输出 Markdown 可读简报
+# 输出 Markdown 可读简报（支持 AI 栈与 Monorepo 识别）
 python scripts/project_inspect.py /path/to/your/project --markdown
 
 # 导出 JSON 报告到文件

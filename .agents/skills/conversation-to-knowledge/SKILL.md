@@ -10,6 +10,12 @@ metadata:
 
 # Conversation Knowledge Editor
 
+## ⚙️ Step 0: Environment (Pure Prompt / Zero Dependencies)
+
+This skill is a **pure meta-cognitive reasoning engine** with **zero external dependencies**. No Python scripts or environment installations are required.
+
+---
+
 ## Goal
 
 Act as a strict **Knowledge Editor**. Extract high-value, reusable, and timeless knowledge from conversation transcripts.
@@ -80,8 +86,9 @@ If a conversation contains zero insights that pass both validation rules, genera
 
 ## Output
 
-Choose the template from `references/templates.md` that fits most naturally. Do not force-fit.
-Check `assets/examples.md` to calibrate your tone, style, and density.
+1. **PKM YAML Frontmatter**: Always populate standard frontmatter (`title`, `date`, `type`, `tags`, `aliases`, `status: evergreen`) to ensure zero-friction integration with Obsidian, Logseq, and Notion.
+2. **Template Matching**: Choose the template from `references/templates.md` that fits most naturally. Do not force-fit.
+3. **Calibrated Density**: Check `assets/examples.md` to calibrate your tone, style, and density.
 
 Add an optional `## Related` section at the bottom if you identify connections to other knowledge areas:
 
@@ -90,3 +97,12 @@ Add an optional `## Related` section at the bottom if you identify connections t
 - [[Related Topic Title 1]]
 - [[Related Topic Title 2]]
 ```
+
+---
+
+## 🔄 Incremental Merging & Vault Maintenance SOP
+
+When the user already maintains an existing knowledge base / note file:
+1. **Deduplication Check**: First check if an existing note covers the core concept.
+2. **Never Duplicate**: If an existing note exists, DO NOT create `Concept_v2.md`.
+3. **Append Nuance**: Add a new dated section `## Update (YYYY-MM): [Specific Nuance / Edge Case]` to the existing note, integrating the new trade-off or discovery directly into its `## Lessons Learned`.

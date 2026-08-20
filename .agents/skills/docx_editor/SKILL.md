@@ -39,6 +39,7 @@ AI Agent 在正式调用任何脚本前，**必须先检查用户的本机 Pytho
 - **规则**：若用户要求“调整排版/排版规范化”，但**没有提出具体的样式参数**，AI 需通过 `docx_inspect.py` 勘察并判定文档类型：
   - **学术论文/毕业论文/期末报告** -> 使用论文预设 (`docx_format.py --preset thesis`)：正文小四宋体/Times New Roman、1.5倍行距、首行缩进 2 字符、标题二级黑体层次分明。
   - **机关公文/正式函件/红头文件** -> 使用公文预设 (`docx_format.py --preset official_doc`)：正文三号仿宋_GB2312、行距 28 磅、一级标题二号宋体/黑体居中。
+  - **技术报告/架构设计文档/技术白皮书** -> 使用技术报告预设 (`docx_format.py --preset tech_report`)：正文 11pt 微软雅黑/Segoe UI、1.35倍行距、段落顶格无缩进、标题左对齐层次分明。
 
 ### 🥉 优先级 3：【保守防线】不确定，不硬排版（Safe Mode）
 - **规则**：如果遇到**自由设计文档、复杂表格文档、艺术性简历、特殊手册**，或者**未能确定目标排版规范**时，**绝对禁止强行对全篇进行排版重置（严禁硬排版）**！
@@ -51,7 +52,9 @@ AI Agent 在正式调用任何脚本前，**必须先检查用户的本机 Pytho
 ## 🛠️ 工具脚本手册
 
 所有脚本均存放在 `.agents/skills/docx_editor/scripts/` 目录下。调用时请使用当前 Python 解释器。
-> **💡 安全保障提示**：`docx_format.py`、`docx_replace.py` 和 `docx_insert.py` 在执行修改保存前，会自动在同级目录下生成一份 `原文件名.bak.docx` 备份文件，确保任何误操作均可无损回滚！
+> **💡 安全保障与演练提示**：
+> - 覆盖保存前均会自动为目标文件创建 `*.bak.docx` 备份副本，确保误操作可随时回滚！
+> - `docx_format.py` 和 `docx_replace.py` 均支持 `--dry-run` 参数，可在不修改文件的前提下预先统计并汇报变更。
 
 ### 1. 勘察与内容感知 (`docx_inspect.py`)
 在执行修改或排版前，**第一步必运行此脚本**，以获取文档结构、现有格式与 Markdown 预览（支持普通段落和表格内容提取）。
@@ -63,10 +66,14 @@ python .agents/skills/docx_editor/scripts/docx_inspect.py <docx_path> [--preview
 ### 2. 智能原子排版引擎 (`docx_format.py`)
 用于全局或局部的格式规范化与排版重置（完整支持 H1~H4 标题层级、正文及表格内段落排版，并具备 `rPr` 节点自动保护机制）。
 ```bash
-# 方式 A：使用预设（论文或公文）
+# 方式 A：使用预设（论文 thesis、公文 official_doc 或技术报告 tech_report）
 python .agents/skills/docx_editor/scripts/docx_format.py <docx_path> --preset thesis --output <out_path>
+python .agents/skills/docx_editor/scripts/docx_format.py <docx_path> --preset tech_report --output <out_path>
 
-# 方式 B：根据用户的具体排版指令，使用命令行参数精准排版
+# 方式 B：预检演练模式（Dry-Run）
+python .agents/skills/docx_editor/scripts/docx_format.py <docx_path> --preset tech_report --dry-run
+
+# 方式 C：根据用户的具体排版指令，使用命令行参数精准排版
 python .agents/skills/docx_editor/scripts/docx_format.py <docx_path> \
     --body-font "宋体" --body-font-ascii "Times New Roman" --body-size 12 \
     --line-spacing 1.5 --first-line-indent 2 \
@@ -74,14 +81,14 @@ python .agents/skills/docx_editor/scripts/docx_format.py <docx_path> \
     --h2-font "黑体" --h2-size 15 --h3-font "黑体" --h3-size 14 \
     --output <out_path>
 
-# 方式 C：通过 JSON 配置文件批量定义复杂样式（针对用户给出的超细致要求）
+# 方式 D：通过 JSON 配置文件批量定义复杂样式（针对用户给出的超细致要求）
 python .agents/skills/docx_editor/scripts/docx_format.py <docx_path> --custom-config style_config.json --output <out_path>
 ```
 
 ### 3. 精准无损替换工具 (`docx_replace.py`)
 在所有段落、表格、页眉页脚中安全替换文本，深度遍历 `runs` 并保持原字号、颜色与加粗样式不变。
 ```bash
-python .agents/skills/docx_editor/scripts/docx_replace.py <docx_path> --old "旧文本" --new "新文本" [--output <out_path>]
+python .agents/skills/docx_editor/scripts/docx_replace.py <docx_path> --old "旧文本" --new "新文本" [--output <out_path>] [--dry-run]
 ```
 
 ### 4. 模板变量填充 (`docx_template.py`)

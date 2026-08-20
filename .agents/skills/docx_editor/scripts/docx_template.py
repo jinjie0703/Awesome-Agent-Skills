@@ -8,18 +8,44 @@ docx_template.py - Word 模板渲染填充工具
 
 import sys
 import json
+import shutil
 import argparse
 from pathlib import Path
 
+# 确保 Windows 终端 UTF-8 编码正常输出
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
+
+def backup_file(file_path: str) -> str:
+    """在修改前自动创建 .bak.docx 备份副本"""
+    p = Path(file_path)
+    if not p.exists():
+        return ""
+    bak_path = p.with_suffix(".bak.docx")
+    shutil.copy2(str(p), str(bak_path))
+    return str(bak_path)
+
+
 def render_template(template_path: str, context: dict, output_path: str):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    
+    # 如果目标输出文件已存在，备份它
+    bak_msg = ""
+    if Path(output_path).exists():
+        bak = backup_file(output_path)
+        if bak:
+            bak_msg = f"（原目标文件已备份至: {bak}）"
+
     # 优先尝试 docxtpl
     try:
         from docxtpl import DocxTemplate  # type: ignore
         doc = DocxTemplate(template_path)
         doc.render(context)
         doc.save(output_path)
-        return f"使用 docxtpl 渲染成功，保存至: {output_path}"
+        return f"使用 docxtpl 渲染成功，保存至: {output_path}{bak_msg}"
     except ImportError:
         pass
 
@@ -27,7 +53,7 @@ def render_template(template_path: str, context: dict, output_path: str):
     try:
         import docx
     except ImportError:
-        return "错误: 既未安装 docxtpl，也未安装 python-docx。请运行: pip install docxtpl python-docx"
+        return "错误: 既未安装 docxtpl，也未安装 python-docx。请运行: uv pip install --system docxtpl python-docx 或 pip install docxtpl python-docx"
 
     doc = docx.Document(template_path)
     
